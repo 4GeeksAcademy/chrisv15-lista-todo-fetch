@@ -1,51 +1,166 @@
-import React from "react";
-import { useState } from "react"
+import React, { useState, useEffect } from "react";
 
-//create your first component
 const Home = () => {
+  const [inputValue, setInputValue] = useState("");
+  const [todos, setTodos] = useState([]);
 
-	const [inputValue, setinputValue] = useState("");
-	const [todos, setTodos] = useState([]);
+  useEffect(() => {
+    fetchTodos();
+  }, []);
 
-	return (
-		<div className="container p-5">
-			<h1 className="d-flex justify-content-center align-items-center">TODOs</h1>
-			<div className="card bg-light">
-				<input
-					type="text"
-					className="card"
-					onChange={(e) => setinputValue(e.target.value)}
-					value={inputValue}
-					onKeyPress={(e) => {
-						if (e.key === "Enter") {
-							setTodos(todos.concat(inputValue));
-							setinputValue("")
-						}
-					}}
-					placeholder="What do you need to do? "></input>
-				<div>
-					{todos.map(item => {
-						return (
-							<div className="card text-grey">
-								<div>
-									{item}
-									<button type="button" className="btn btn-light float-end" onClick={(e) => {
-										setTodos(todos.filter(todo => todo != item));
-									}}>
-										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16">
-											<path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z" />
-										</svg>
-									</button>
-								</div>
+  const fetchTodos = async () => {
+    try {
+      const response = await fetch(
+        "https://assets.breatheco.de/apis/fake/todos/user/chrisv15"
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch todos");
+      }
+      const todosData = await response.json();
+      setTodos(todosData);
+    } catch (error) {
+      await initializeTodos();
+    }
+  };
 
-							</div>
-						);
-					})}
-				</div>
-				<div>{todos.length > 0 ? todos.length + " items left" : "No TODOs, please add one"}</div>
-			</div>
-		</div>
-	);
+  const initializeTodos = async () => {
+    try {
+      const response = await fetch(
+        "https://assets.breatheco.de/apis/fake/todos/user/chrisv15",
+        {
+          method: "POST",
+          body: JSON.stringify([]),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to initialize todo list");
+      }
+      setTodos([]);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const addTodo = async () => {
+    if (!inputValue) return;
+    const newTodo = { label: inputValue, done: false };
+    const updatedTodos = [...todos, newTodo];
+    setTodos(updatedTodos);
+    setInputValue("");
+
+    try {
+      const response = await fetch(
+        "https://assets.breatheco.de/apis/fake/todos/user/chrisv15",
+        {
+          method: "PUT",
+          body: JSON.stringify(updatedTodos),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to update todo list");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const deleteTodo = async (todoIndex) => {
+    const updatedTodos = todos.filter((_, index) => index !== todoIndex);
+    setTodos(updatedTodos);
+
+    try {
+      const response = await fetch(
+        "https://assets.breatheco.de/apis/fake/todos/user/chrisv15",
+        {
+          method: "PUT",
+          body: JSON.stringify(updatedTodos),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to update todo list");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const clearAllTodos = async () => {
+    const updatedTodos = [];
+    setTodos(updatedTodos);
+
+    try {
+      const response = await fetch(
+        "https://assets.breatheco.de/apis/fake/todos/user/chrisv15",
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to delete all todos");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  return (
+    <div className="container p-5">
+      <h1 className="d-flex justify-content-center align-items-center">TODOs</h1>
+      <div className="card bg-light">
+        <input
+          type="text"
+          className="card"
+          onChange={(e) => setInputValue(e.target.value)}
+          value={inputValue}
+          onKeyPress={(e) => {
+            if (e.key === "Enter") {
+              addTodo();
+            }
+          }}
+          placeholder="What do you need to do? "
+        ></input>
+        <div>
+          {todos.map((item, index) => {
+            return (
+              <div className="card text-grey" key={index}>
+                <div>
+                  {item.label}
+                  <button
+                    type="button"
+                    className="btn btn-light float-end"
+                    onClick={() => deleteTodo(index)}
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {todos.length > 0 && (
+          <button
+            type="button"
+            className="btn btn-light"
+            onClick={clearAllTodos}
+          >
+            Clear All
+          </button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default Home;
